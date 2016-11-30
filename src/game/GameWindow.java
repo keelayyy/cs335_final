@@ -11,6 +11,8 @@ import com.jogamp.opengl.util.Animator;
 
 public class GameWindow extends Frame {
 	
+	//test check change
+	
 	public static void main(String[] args) {
 		//initialize and display game window
 		GameWindow window = new GameWindow();
