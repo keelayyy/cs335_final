@@ -5,11 +5,14 @@ import java.awt.Frame;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 
+import javax.swing.JFrame;
+
 import com.jogamp.opengl.GLCapabilities;
 import com.jogamp.opengl.awt.GLCanvas;
+import com.jogamp.opengl.glu.GLU;
 import com.jogamp.opengl.util.Animator;
 
-public class GameWindow extends Frame {
+public class GameWindow extends JFrame {
 	
 	public static void main(String[] args) {
 		//initialize and display game window
@@ -17,30 +20,14 @@ public class GameWindow extends Frame {
         window.setVisible(true);
 	}
 	
-
-	static Animator anim = null;
-	private void setupJOGL(){
-	    GLCapabilities caps = new GLCapabilities(null);
-	    caps.setDoubleBuffered(true);
-	    caps.setHardwareAccelerated(true);
-	    
-	    GLCanvas canvas = new GLCanvas(caps); 
-        add(canvas);
-
-//        JoglEventListener jgl = new JoglEventListener();
-//        canvas.addGLEventListener(jgl); 
-//        canvas.addKeyListener(jgl); 
-//        canvas.addMouseListener(jgl);
-//        canvas.addMouseMotionListener(jgl);
-
-        anim = new Animator(canvas);
-        anim.start();
-
-	}
-	
     public GameWindow() {
-        super("The White Point Guard Special - A Free Throw Simulator");
-        setLayout(new BorderLayout());
+    	super("The White Point Guard Special - A Free Throw Simulator");
+
+        GLCapabilities capabilities = createGLCapabilities();
+	    JoglEventListener jgl = new JoglEventListener(600,600,capabilities);
+    	
+    	this.getContentPane().add(jgl, BorderLayout.CENTER);
+    	this.setSize(600, 600);
         addWindowListener(new WindowAdapter()
         {
             public void windowClosing(WindowEvent e)
@@ -48,11 +35,19 @@ public class GameWindow extends Frame {
                 System.exit(0);
             }
         });
-        setSize(800, 800);
-        setLocation(40, 40);
-        setVisible(true);
-        setupJOGL();
+	    this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        this.setVisible(true);
+	    jgl.requestFocus();
     }
+	
+	private static GLCapabilities createGLCapabilities() {
+	    GLCapabilities capabilities = new GLCapabilities(null);
+	    capabilities.setRedBits(8);
+	    capabilities.setBlueBits(8);
+	    capabilities.setGreenBits(8);
+	    capabilities.setAlphaBits(8);
+	    return capabilities;
+	}
 	
 	//auto-generated ID (not used, I just don't like eclipse warnings)
 	private static final long serialVersionUID = 1L;
