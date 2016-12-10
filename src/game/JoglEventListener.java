@@ -25,13 +25,6 @@ import com.jogamp.opengl.util.texture.TextureIO;
 
 
 public class JoglEventListener extends GLCanvas implements GLEventListener, KeyListener, MouseListener, MouseMotionListener {
-		
-	/*
-	 * Custom variables for mouse drag operations 
-	 */
-
-	private Texture floor_texture;
-	private Texture skybox_texture;
 	
 	private static Animator animator;
 
@@ -40,6 +33,7 @@ public class JoglEventListener extends GLCanvas implements GLEventListener, KeyL
     //declare court, basket, and ball objects
     Court court = null;
     Ball ball = null;
+    Basket basket = null;
 	
 	private float camera_angle_X = 0;
 	private float camera_angle_Y = 0.25f;
@@ -86,17 +80,6 @@ public class JoglEventListener extends GLCanvas implements GLEventListener, KeyL
 		final GL2 gl2 = gLDrawable.getGL().getGL2();
 		gl2.glClearColor(0.0f, 0.0f, 0.0f, 0.5f);    // Black Background
 		gl2.glClearDepth(1.0f);                      // Depth Buffer Setup
-		
-		try {
-			floor_texture = TextureIO.newTexture(new File("court_floor.jpg"), false);
-			skybox_texture = TextureIO.newTexture(new File("skybox_texture.jpg"), false);
-		} catch (GLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
 
 		//Add event listeners for interactive functionality
 		this.addKeyListener(this);
@@ -104,7 +87,8 @@ public class JoglEventListener extends GLCanvas implements GLEventListener, KeyL
 		this.addMouseMotionListener(this);
 		
 		court = new Court();
-		ball = new Ball();
+		ball = new Ball(0.75f);
+		basket = new Basket(31.5f,2f,0f,1.0f);
 
 		//Start animator
     	animator = new Animator(this);
@@ -112,18 +96,26 @@ public class JoglEventListener extends GLCanvas implements GLEventListener, KeyL
 	}
 
 	public void drawCourt(GL2 gl2){
-		gl2.glTranslatef(0, 0, 0);
 		court.draw(gl2);
-		gl2.glTranslatef(camera_X, camera_Y, camera_Z);
+	}
+	
+	public void drawBasket(GL2 gl2){
+		basket.draw(gl2,glu);
 	}
 	
 	public void drawBall(GL2 gl2){
 		//getting there...
-		gl2.glTranslated((camera_lookat_X / (camera_X + 1)) + 1, (camera_lookat_Y / (camera_Y + 1)) + 1, (camera_lookat_Z  / (camera_Z + 1)) + 1);
-		//System.out.println((camera_lookat_X / (camera_X + 1)) + 1);
-		//System.out.println(camera_lookat_Z / camera_Z + 1);
+		//set ball position based on where we're looking
+		//gl2.glTranslated(Math.sin(camera_angle_X),Math.sin(camera_angle_Y) - 3.0,Math.cos(camera_angle_X));
+		gl2.glTranslatef(-camera_X, -camera_Y, -camera_Z);
+//		float ball_X = camera_lookat_X + 2;
+//		float ball_Y = camera_lookat_Y - 0.1f;
+//		float ball_Z = camera_lookat_Z + 2;
+//		gl2.glTranslatef(ball_X,ball_Y,ball_Z);
 		ball.draw(gl2,glu);
 		gl2.glTranslatef(camera_X, camera_Y, camera_Z);
+		//gl2.glTranslatef(-camera_angle_X,-camera_angle_Y,0f);
+		//gl2.glTranslated(-2f * Math.sin(camera_angle_X),-2f *Math.sin(camera_angle_Y),-2f *Math.cos(camera_angle_X));
 	}
 	
 	
@@ -132,6 +124,15 @@ public class JoglEventListener extends GLCanvas implements GLEventListener, KeyL
 		// TODO Auto-generated method stub
 		final GL2 gl2 = gLDrawable.getGL().getGL2();
         
+		setup3D(gl2);
+		render3D(gl2);
+		
+		setup2D(gl2);
+		render2D(gl2);
+		
+	}
+    
+    public void setup3D(final GL2 gl2){
 		////////////3D Rendering
 		gl2.glEnable(GL.GL_DEPTH_TEST);              // Enables Depth Testing
 		gl2.glDepthFunc(GL.GL_LEQUAL);               // The Type Of Depth Testing To Do
@@ -150,6 +151,9 @@ public class JoglEventListener extends GLCanvas implements GLEventListener, KeyL
 	    		camera_lookat_Y, 
 	    		camera_lookat_Z,
 	    		0,1,0);
+    }
+    
+    public void render3D(final GL2 gl2){
 		gl2.glPushMatrix();
 
 	    gl2.glMatrixMode(GL2.GL_MODELVIEW);
@@ -157,13 +161,15 @@ public class JoglEventListener extends GLCanvas implements GLEventListener, KeyL
 		gl2.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT);
 
 		gl2.glPushMatrix();
-		
+
 		drawCourt(gl2);
+		drawBasket(gl2);
 		drawBall(gl2);
         
         gl2.glPopMatrix();
-        
-        
+    }
+    
+    public void setup2D(final GL2 gl2){
         /////////////2D Rendering
         gl2.glMatrixMode(GL2.GL_PROJECTION);
         gl2.glLoadIdentity();
@@ -175,13 +181,15 @@ public class JoglEventListener extends GLCanvas implements GLEventListener, KeyL
         gl2.glTranslatef(0,0, 0.0f);
 
         gl2.glDisable(GL.GL_DEPTH_TEST);
-        
+    }
+    
+    public void render2D(final GL2 gl2){
         gl2.glPushMatrix();
         
         drawHUD(gl2);
         
         gl2.glPopMatrix();
-	}
+    }
 	
 	public void drawHUD(final GL2 gl2){
 		//this should ideally show the score and some directions
@@ -202,22 +210,45 @@ public class JoglEventListener extends GLCanvas implements GLEventListener, KeyL
 		
 		switch(key){
 		case 'w':
-			camera_X += .3f * Math.sin((Math.PI/2) - camera_angle_X);
-			camera_Z += .3f * Math.cos((Math.PI/2) - camera_angle_X);
+			//check for out of bounds and don't update variable if we hit a wall
+			if (Math.abs(camera_X + .3f * Math.sin((Math.PI/2) - camera_angle_X)) <= (Court.MAX_X_WIDTH - Court.WALL_BUFFER)){
+				camera_X += .3f * Math.sin((Math.PI/2) - camera_angle_X);
+			}
+			if (Math.abs(camera_Z + .3f * Math.cos((Math.PI/2) - camera_angle_X)) <= (Court.MAX_Z_WIDTH - Court.WALL_BUFFER)){
+				camera_Z += .3f * Math.cos((Math.PI/2) - camera_angle_X);
+			}
 			break;
 		case 'a':
-			camera_X -= .3f * Math.cos((Math.PI/2) + camera_angle_X);
-			camera_Z -= .3f * Math.sin((Math.PI/2) - camera_angle_X);
+			if (Math.abs(camera_X - .3f * Math.cos((Math.PI/2) + camera_angle_X)) <= (Court.MAX_X_WIDTH - Court.WALL_BUFFER)){
+				camera_X -= .3f * Math.cos((Math.PI/2) + camera_angle_X);
+			}
+			
+			if (Math.abs(camera_Z - .3f * Math.sin((Math.PI/2) - camera_angle_X)) <= (Court.MAX_Z_WIDTH - Court.WALL_BUFFER)){
+				camera_Z -= .3f * Math.sin((Math.PI/2) - camera_angle_X);
+			}
 			break;
 		case 's':
-			camera_X -= .3f * Math.sin((Math.PI/2) - camera_angle_X);
-			camera_Z -= .3f * Math.cos((Math.PI/2) - camera_angle_X);
+			if (Math.abs(camera_X - .3f * Math.sin((Math.PI/2) - camera_angle_X)) <= (Court.MAX_X_WIDTH - Court.WALL_BUFFER)){
+				camera_X -= .3f * Math.sin((Math.PI/2) - camera_angle_X);
+			}
+			
+			if (Math.abs(camera_Z - .3f * Math.cos((Math.PI/2) - camera_angle_X)) <= (Court.MAX_Z_WIDTH - Court.WALL_BUFFER)){
+				camera_Z -= .3f * Math.cos((Math.PI/2) - camera_angle_X);
+			}
 			break;
 		case 'd':
-			camera_X += .3f * Math.cos((Math.PI/2) + camera_angle_X);
-			camera_Z += .3f * Math.sin((Math.PI/2) - camera_angle_X);
+			if (Math.abs(camera_X + .3f * Math.cos((Math.PI/2) + camera_angle_X)) <= (Court.MAX_X_WIDTH - Court.WALL_BUFFER)){
+				camera_X += .3f * Math.cos((Math.PI/2) + camera_angle_X);
+			}
+			
+			if (Math.abs(camera_Z + .3f * Math.sin((Math.PI/2) - camera_angle_X)) <= (Court.MAX_Z_WIDTH - Court.WALL_BUFFER)){
+				camera_Z += .3f * Math.sin((Math.PI/2) - camera_angle_X);
+			}
 			break;
 		}
+		System.out.println("X: " + camera_X + "\tLookat X: " + camera_lookat_X);
+		System.out.println("Y: " + camera_Y + "\tLookat Y: " + camera_lookat_Y);
+		System.out.println("Z: " + camera_Z + "\tLookat Z: " + camera_lookat_Z);
 	}
 	
 	//determine location of click
@@ -274,11 +305,14 @@ public class JoglEventListener extends GLCanvas implements GLEventListener, KeyL
 		
 		//reset X angle in case we rotate all the way around
 		if (camera_angle_X < -2 * Math.PI) {
-			camera_angle_X = (float) (-1 * ((-1 * camera_angle_X) % 2 * Math.PI));
+			camera_angle_X = (float) (-1 * ((-1 * camera_angle_X) % (2 * Math.PI)));
 		}
 		else if (camera_angle_X > 2 * Math.PI) {
 			camera_angle_X %= 2 * Math.PI;
 		}
+		System.out.println("X: " + Math.sin(camera_angle_X));
+		System.out.println("Y: " + (Math.sin(camera_angle_Y) - 3.0));
+		System.out.println("Z: " + Math.cos(camera_angle_X));
 	}
 			
 	@Override
@@ -315,7 +349,3 @@ public class JoglEventListener extends GLCanvas implements GLEventListener, KeyL
 		
 	}
 }
-
-
-
-

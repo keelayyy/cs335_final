@@ -13,13 +13,16 @@ public class Court {
 	private Texture wall_texture;
 	private Texture ceiling_texture;
 
+	public static float MAX_X_WIDTH = 40f;
+	public static float MAX_Z_WIDTH = 20f;
+	public static float WALL_BUFFER = 2f;
 	
 	public Court(){
 		try { 
 	        //bind floor and wall texture to GL2 objects
-			floor_texture = TextureIO.newTexture(new File("court_floor.jpg"), false);
-			wall_texture = TextureIO.newTexture(new File("court_wall.jpg"), false);
-			ceiling_texture = TextureIO.newTexture(new File("court_ceiling.jpg"), false);
+			floor_texture = TextureIO.newTexture(new File("src/textures/court_floor.jpg"), false);
+			wall_texture = TextureIO.newTexture(new File("src/textures/court_wall.jpg"), false);
+			ceiling_texture = TextureIO.newTexture(new File("src/textures/court_ceiling.jpg"), false);
 		} catch (Exception ex) {
 		    ex.printStackTrace();
 		}
