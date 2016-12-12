@@ -1,25 +1,21 @@
 package game;
 
-
+import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
-import java.io.File;
-import java.io.IOException;
 
 import com.jogamp.opengl.GL;
 import com.jogamp.opengl.GL2;
 import com.jogamp.opengl.GLAutoDrawable;
 import com.jogamp.opengl.GLCapabilities;
 import com.jogamp.opengl.GLEventListener;
-import com.jogamp.opengl.GLException;
 import com.jogamp.opengl.awt.GLCanvas;
 import com.jogamp.opengl.glu.GLU;
 import com.jogamp.opengl.util.Animator;
-import com.jogamp.opengl.util.texture.Texture;
-import com.jogamp.opengl.util.texture.TextureIO;
+import com.jogamp.opengl.util.awt.TextRenderer;
 
 
 
@@ -30,10 +26,16 @@ public class JoglEventListener extends GLCanvas implements GLEventListener, KeyL
 
     private GLU glu = new GLU();
     
+    private boolean check = false;
+    private boolean helpCheck = false;
+    
     //size of power bar and power bar counter to count twice
     private float barSize = 0;
     private float barCounter = 0;
     private float ballPower = 0;
+    
+    //Text renderer for ballPower
+    private TextRenderer textRenderer;
     
     //declare court, basket, and ball objects
     Court court = null;
@@ -97,8 +99,8 @@ public class JoglEventListener extends GLCanvas implements GLEventListener, KeyL
 		court = new Court();
 		ball = new Ball(0.75f);
 		basket = new Basket(31.5f,2f,0f,1.0f);
-		hud = new HUD(0f, 0f);
-
+		hud = new HUD(0f, 0f, ballPower);
+		
 		//Start animator
     	animator = new Animator(this);
     	animator.start();
@@ -129,6 +131,9 @@ public class JoglEventListener extends GLCanvas implements GLEventListener, KeyL
 	
 	public void drawHUD(GL2 gl2, float barSize){
 		hud.draw(gl2, barSize);
+		if (check == true){
+			hud.drawBallPower(gl2);
+		}
 	}
 	
 	
@@ -213,6 +218,12 @@ public class JoglEventListener extends GLCanvas implements GLEventListener, KeyL
         gl2.glPushMatrix();
         
         drawHUD(gl2, barSize);
+        if (helpCheck == false){
+        	hud.drawHelpPrompt(gl2);
+        }
+        else if (helpCheck == true){
+        	hud.drawHelpMessage(gl2);
+        }
         
         gl2.glPopMatrix();
     }
@@ -378,15 +389,26 @@ public class JoglEventListener extends GLCanvas implements GLEventListener, KeyL
 		//if space bar is pressed, start shoot mode
 		if (key == ' ' && ShootMode == false){
 			ShootMode = true;
+			check = false;
 		}
 		//gets shot power from second press of space bar
 		//and resets power bar
 		else if (key == ' ' && ShootMode == true){
-			ballPower = barSize / 300;
+			ballPower = barSize / 3;
 			System.out.println("BallPower: " + ballPower);
+			hud.setBall_Power((int) ballPower); 
 			ShootMode = false;
 			barSize = 0;
 			barCounter = 0;
+			check = true;
+		}
+		//displays help text if h is pressed
+		else if (key == 'h' && helpCheck == false){
+			helpCheck = true;
+		}
+		//conceal help text when h is pressed again
+		else if (key == 'h' && helpCheck == true){
+			helpCheck = false;
 		}
 	}
 }
