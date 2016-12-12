@@ -1,6 +1,9 @@
 package game;
 
 import java.io.File;
+import java.util.Vector;
+
+import javax.vecmath.Vector3f;
 
 import com.jogamp.opengl.GL;
 import com.jogamp.opengl.GL2;
@@ -14,6 +17,19 @@ public class Basket {
 	//define any textures you'll be using here
 	private Texture backboard_texture;
 	private Texture net_texture;
+	
+	public static float BACKBOARD_MAX_Z = 4.5f;
+	public static float BACKBOARD_MIN_Y = 1.5f;
+	public static float BACKBOARD_MAX_Y = 6.0f;
+	public static float BACKBOARD_MIN_X = 33f;
+	public static float BACKBOARD_MAX_X = 34f;
+	
+	private boolean rim_drawn = false;
+	
+	public static int RIM_FACES = 50;
+	
+	private Vector<Vector3f> rimVertexList = new Vector<Vector3f>();
+	private Vector<Vector3f> normalVertexList = new Vector<Vector3f>();
 	
 	//position of the center of the hoop
 	private float x_position, y_position, z_position, hoop_radius;
@@ -43,10 +59,10 @@ public class Basket {
 		gl2.glTranslatef(x_position, y_position, z_position);
 		
 		//draw rim
-		drawRim(gl2, hoop_radius * 0.1f, hoop_radius, 50, 50);
-		
+		drawRim(gl2);
+		rim_drawn = true;
 		//draw net
-		drawNet(gl2,glu,hoop_radius,hoop_radius * 2.5f);
+		drawNet(gl2,glu);
 		
 		gl2.glTranslatef(-x_position, -y_position, -z_position);
 		
@@ -158,26 +174,33 @@ public class Basket {
 	
 	//draws a ring. original implementation taken from
 	//http://www.java2s.com/Code/Java/SWT-JFace-Eclipse/drawarotatingtorususingtheJOGLOpenGLbinding.htm
-	public void drawRim(final GL2 gl2, float r, float R, int nsides, int rings) {
+	public void drawRim(final GL2 gl2) {
+		float r = getHoopRadius() * 0.1f;
 		gl2.glColor3f(0.6784f,0.4196f,0);
-		float ringDelta = 2.0f * (float) Math.PI / rings;
-		float sideDelta = 2.0f * (float) Math.PI / nsides;
+		float ringDelta = 2.0f * (float) Math.PI / RIM_FACES;
+		float sideDelta = 2.0f * (float) Math.PI / RIM_FACES;
 		float theta = 0.0f, cosTheta = 1.0f, sinTheta = 0.0f;
-		for (int i = rings - 1; i >= 0; i--) {
+		for (int i = RIM_FACES - 1; i >= 0; i--) {
 			float theta1 = theta + ringDelta;
 			float cosTheta1 = (float) Math.cos(theta1);
 			float sinTheta1 = (float) Math.sin(theta1);
 			gl2.glBegin(GL2.GL_QUAD_STRIP);
 			float phi = 0.0f;
-			for (int j = nsides; j >= 0; j--) {
+			for (int j = RIM_FACES; j >= 0; j--) {
 				phi += sideDelta;
 				float cosPhi = (float) Math.sin(phi);
 				float sinPhi = (float) Math.cos(phi);
-				float dist = R + r * cosPhi;
+				float dist = getHoopRadius() + r * cosPhi;
 				gl2.glNormal3f(-sinTheta1 * cosPhi,sinPhi,  cosTheta1 * cosPhi);
 				gl2.glVertex3f( -sinTheta1 * dist,r * sinPhi, cosTheta1 * dist);
 				gl2.glNormal3f( -sinTheta * cosPhi,sinPhi, cosTheta * cosPhi);
 				gl2.glVertex3f( -sinTheta * dist,r * sinPhi, cosTheta * dist);
+				if (!rim_drawn){
+					rimVertexList.add(new Vector3f( -sinTheta1 * dist,r * sinPhi, cosTheta1 * dist));
+					rimVertexList.add(new Vector3f( -sinTheta * dist,r * sinPhi, cosTheta * dist));
+					normalVertexList.add(new Vector3f(-sinTheta1 * cosPhi,sinPhi,  cosTheta1 * cosPhi));
+					normalVertexList.add(new Vector3f( -sinTheta * cosPhi,sinPhi, cosTheta * cosPhi));
+				}
 			}
 			gl2.glEnd();
 			theta = theta1;
@@ -186,7 +209,7 @@ public class Basket {
 		}
 	}
 	
-	public void drawNet(final GL2 gl2, final GLU glu, float radius, float height) {
+	public void drawNet(final GL2 gl2, final GLU glu) {
 		gl2.glEnable(GL.GL_BLEND);
 		gl2.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA);
 		gl2.glRotatef(90f, 1, 0, 0);
@@ -195,7 +218,7 @@ public class Basket {
 
 		gl2.glEnable(GL.GL_TEXTURE_2D);
 		net_texture.bind(gl2);
-		glu.gluCylinder(qobj,radius,radius * 0.8f,height,50,50); 
+		glu.gluCylinder(qobj,getHoopRadius(),getHoopRadius() * 0.8f,getHoopRadius() * 2.5f,50,50); 
 
 		glu.gluDeleteQuadric(qobj); 
 		gl2.glRotatef(-90f, 1, 0, 0);
@@ -221,19 +244,35 @@ public class Basket {
 		this.y_position = y_position;
 	}
 
-	public float getZ_position() {
+	public float getZ() {
 		return z_position;
 	}
 
-	public void setZ_position(float z_position) {
+	public void setZ(float z_position) {
 		this.z_position = z_position;
 	}
 
-	public float getHoop_radius() {
+	public float getHoopRadius() {
 		return hoop_radius;
 	}
 
-	public void setHoop_radius(float hoop_radius) {
+	public void setHoopRadius(float hoop_radius) {
 		this.hoop_radius = hoop_radius;
+	}
+
+	public Vector<Vector3f> getRimVertexList() {
+		return rimVertexList;
+	}
+
+	public void setRimVertexList(Vector<Vector3f> rimVertexList) {
+		this.rimVertexList = rimVertexList;
+	}
+
+	public Vector<Vector3f> getNormalVertexList() {
+		return normalVertexList;
+	}
+
+	public void setNormalVertexList(Vector<Vector3f> normalVertexList) {
+		this.normalVertexList = normalVertexList;
 	}
 }
