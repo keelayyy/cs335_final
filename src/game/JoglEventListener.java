@@ -30,10 +30,16 @@ public class JoglEventListener extends GLCanvas implements GLEventListener, KeyL
 
     private GLU glu = new GLU();
     
+    //size of power bar and power bar counter to count twice
+    private float barSize = 0;
+    private float barCounter = 0;
+    private float ballPower = 0;
+    
     //declare court, basket, and ball objects
     Court court = null;
     Ball ball = null;
     Basket basket = null;
+    HUD hud = null;
 	
 	private float camera_angle_X = 0;
 	private float camera_angle_Y = 0.25f;
@@ -49,6 +55,8 @@ public class JoglEventListener extends GLCanvas implements GLEventListener, KeyL
 	
 	private float dragX;
 	private float dragY;
+	
+	private boolean ShootMode = false;
 	
 
 	float windowWidth, windowHeight;
@@ -89,6 +97,7 @@ public class JoglEventListener extends GLCanvas implements GLEventListener, KeyL
 		court = new Court();
 		ball = new Ball(0.75f);
 		basket = new Basket(31.5f,2f,0f,1.0f);
+		hud = new HUD(0f, 0f);
 
 		//Start animator
     	animator = new Animator(this);
@@ -118,6 +127,10 @@ public class JoglEventListener extends GLCanvas implements GLEventListener, KeyL
 		//gl2.glTranslated(-2f * Math.sin(camera_angle_X),-2f *Math.sin(camera_angle_Y),-2f *Math.cos(camera_angle_X));
 	}
 	
+	public void drawHUD(GL2 gl2, float barSize){
+		hud.draw(gl2, barSize);
+	}
+	
 	
     @Override
 	public void display(GLAutoDrawable gLDrawable) {
@@ -129,6 +142,19 @@ public class JoglEventListener extends GLCanvas implements GLEventListener, KeyL
 		
 		setup2D(gl2);
 		render2D(gl2);
+		if (ShootMode == true){
+			if(barSize < 300){
+				barSize = barSize + 5;
+			}
+			else{
+				barSize = 0;
+				barCounter++;
+				if (barCounter == 2){
+					ShootMode = false;
+					barCounter = 0;
+				}
+			}
+		}
 		
 	}
     
@@ -186,12 +212,12 @@ public class JoglEventListener extends GLCanvas implements GLEventListener, KeyL
     public void render2D(final GL2 gl2){
         gl2.glPushMatrix();
         
-        drawHUD(gl2);
+        drawHUD(gl2, barSize);
         
         gl2.glPopMatrix();
     }
 	
-	public void drawHUD(final GL2 gl2){
+	/*public void drawHUD(final GL2 gl2){
 		//this should ideally show the score and some directions
 		gl2.glBegin(GL2.GL_QUADS);
 		gl2.glColor3f(1, 0, 0);
@@ -200,7 +226,7 @@ public class JoglEventListener extends GLCanvas implements GLEventListener, KeyL
 		gl2.glVertex2f(.2f,.2f);
 		gl2.glVertex2f(.1f,.2f);
 		gl2.glEnd();
-	}
+	}*/
 	
 	
 	//control lateral (X-Z) movement through environment
@@ -246,9 +272,9 @@ public class JoglEventListener extends GLCanvas implements GLEventListener, KeyL
 			}
 			break;
 		}
-		System.out.println("X: " + camera_X + "\tLookat X: " + camera_lookat_X);
-		System.out.println("Y: " + camera_Y + "\tLookat Y: " + camera_lookat_Y);
-		System.out.println("Z: " + camera_Z + "\tLookat Z: " + camera_lookat_Z);
+		//System.out.println("X: " + camera_X + "\tLookat X: " + camera_lookat_X);
+		//System.out.println("Y: " + camera_Y + "\tLookat Y: " + camera_lookat_Y);
+		//System.out.println("Z: " + camera_Z + "\tLookat Z: " + camera_lookat_Z);
 	}
 	
 	//determine location of click
@@ -310,9 +336,9 @@ public class JoglEventListener extends GLCanvas implements GLEventListener, KeyL
 		else if (camera_angle_X > 2 * Math.PI) {
 			camera_angle_X %= 2 * Math.PI;
 		}
-		System.out.println("X: " + Math.sin(camera_angle_X));
-		System.out.println("Y: " + (Math.sin(camera_angle_Y) - 3.0));
-		System.out.println("Z: " + Math.cos(camera_angle_X));
+		//System.out.println("X: " + Math.sin(camera_angle_X));
+		//System.out.println("Y: " + (Math.sin(camera_angle_Y) - 3.0));
+		//System.out.println("Z: " + Math.cos(camera_angle_X));
 	}
 			
 	@Override
@@ -346,6 +372,21 @@ public class JoglEventListener extends GLCanvas implements GLEventListener, KeyL
 	}
 	@Override
 	public void keyPressed(KeyEvent e) {
+		System.out.println("Key Pressed: " + e);
+		char key = e.getKeyChar();
 		
+		//if space bar is pressed, start shoot mode
+		if (key == ' ' && ShootMode == false){
+			ShootMode = true;
+		}
+		//gets shot power from second press of space bar
+		//and resets power bar
+		else if (key == ' ' && ShootMode == true){
+			ballPower = barSize / 300;
+			System.out.println("BallPower: " + ballPower);
+			ShootMode = false;
+			barSize = 0;
+			barCounter = 0;
+		}
 	}
 }
