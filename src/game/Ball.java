@@ -2,6 +2,8 @@ package game;
 
 import java.io.File;
 
+import javax.vecmath.Vector3f;
+
 import com.jogamp.opengl.GL;
 import com.jogamp.opengl.GL2;
 import com.jogamp.opengl.glu.GLU;
@@ -12,6 +14,8 @@ import com.jogamp.opengl.util.texture.TextureIO;
 public class Ball {
 	
 	private Texture ball_texture;
+	
+	Vector3f position;
 	
 	private float radius;
 
@@ -26,7 +30,11 @@ public class Ball {
 		}
 	}
 	
-	public void draw(final GL2 gl2, final GLU glu){
+	public void draw(final GL2 gl2, final GLU glu, Vector3f position){
+		this.position = position;
+		float[] xyz = new float[3];
+		position.get(xyz);
+		gl2.glTranslatef(xyz[0], xyz[1], xyz[2]);
 		GLUquadric qobj = glu.gluNewQuadric(); 
 		glu.gluQuadricTexture(qobj,true); 
 
@@ -47,5 +55,13 @@ public class Ball {
 
 	public void setRadius(float radius) {
 		this.radius = radius;
+	}
+
+	public Vector3f getPosition() {
+		return position;
+	}
+
+	public void setPosition(Vector3f position) {
+		this.position = position;
 	}
 }

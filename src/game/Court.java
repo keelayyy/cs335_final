@@ -15,6 +15,8 @@ public class Court {
 
 	public static float MAX_X_WIDTH = 40f;
 	public static float MAX_Z_WIDTH = 20f;
+	public static float MAX_Y_HEIGHT = 10f;
+	public static float MIN_Y_HEIGHT = -5f;
 	public static float WALL_BUFFER = 2f;
 	
 	public Court(){
