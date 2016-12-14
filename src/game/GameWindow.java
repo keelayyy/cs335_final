@@ -27,7 +27,7 @@ public class GameWindow extends JFrame {
 	    JoglEventListener jgl = new JoglEventListener(600,600,capabilities);
     	
     	this.getContentPane().add(jgl, BorderLayout.CENTER);
-    	this.setSize(800,800);
+    	this.setSize(600,600);
         addWindowListener(new WindowAdapter()
         {
             public void windowClosing(WindowEvent e)

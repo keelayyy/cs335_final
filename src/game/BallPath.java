@@ -13,6 +13,7 @@ public class BallPath {
 	Vector<Vector3f> path = null;
 	private boolean scored;
     private int scoredLocation;
+    private boolean hitRim = false;
 	
 	public BallPath(Vector3f start, Vector3f startDirection,
 			float force, float angle_X, float angle_Y,
@@ -35,7 +36,7 @@ public class BallPath {
 	    Vector3f accel = new Vector3f(0.0f, -0.01f, 0.0f);
 	    Vector3f speed = new Vector3f(xStep,yStep,zStep);
 
-	    while ((path.size() < 4500)) {
+	    while ((path.size() < 250)) {
  	    	path.add(new Vector3f(curPos));
 	        speed.add(accel);
 	        curPos.add(speed);
@@ -109,6 +110,7 @@ public class BallPath {
                         speed.x *= -0.9;
                         speed.y *= -0.9;
                         speed.z *= -0.9;
+                        hitRim = true;
                         break;
                     }
                 }
@@ -134,9 +136,10 @@ public class BallPath {
 //                }
             }
 	        //Scored???
-	        if (((Math.abs(xyzCurPos[1] - basket.getY()) < 0.5 
-	        		&& Math.abs(xyzCurPos[0] - basket.getX()) < 0.5 
-	        		&& Math.abs(xyzCurPos[2] - basket.getZ()) < 0.5))) {
+	        if (((Math.abs(xyzCurPos[1] - basket.getY()) < 1.0
+	        		&& Math.abs(xyzCurPos[0] - basket.getX()) < 1.0
+	        		&& Math.abs(xyzCurPos[2] - basket.getZ()) < 1.0))
+	        		&& !hitRim) {
  	            scored = true;
 	            if (scoredLocation < 0) {
 	            	scoredLocation = path.size();

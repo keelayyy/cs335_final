@@ -20,8 +20,16 @@ public class HUD {
 	 private TextRenderer helpPromptRenderer;
 	 private TextRenderer helpMessageRenderer;
 	 private String message;
-	 private String helpMessage;
+	 private String helpMessage0;
+	 private String helpMessage1;
+	 private String helpMessage2;
+	 private String helpMessage3;
+	 private String helpMessage4;
+	 private String helpMessage5;
 	 private String helpPrompt;
+	 private String replayMessage;
+	 private String retryMessage;
+	 private String replayInstructions;
 	
 	public HUD(float x, float y, float ballPower){
 		this.x_position = x;
@@ -38,7 +46,7 @@ public class HUD {
 	//draw yellow background bar for power bar
 	public void drawPBBackground(final GL2 gl2){
 		
-		//color bar white
+		//color bar yellow
 		gl2.glColor3f(1f, 1f, 0f);
 		
 		gl2.glBegin(GL2.GL_QUADS);
@@ -73,7 +81,7 @@ public class HUD {
 		textRenderer = new TextRenderer(new Font("SansSerif", Font.BOLD, 14));
 
 		textRenderer.beginRendering(600, 600);
-		textRenderer.setColor(Color.RED);
+		textRenderer.setColor(Color.BLACK);
 		textRenderer.draw(message, 5, 565);
 		textRenderer.endRendering();
 		
@@ -85,20 +93,93 @@ public class HUD {
 		helpPromptRenderer = new TextRenderer(new Font("SansSerif", Font.BOLD, 14));
 		
 		helpPromptRenderer.beginRendering(600, 600);
-		helpPromptRenderer.setColor(Color.RED);
+		helpPromptRenderer.setColor(Color.WHITE);
 		helpPromptRenderer.draw(helpPrompt, 5, 25);
 		helpPromptRenderer.endRendering();
 	}
 	
 	public void drawHelpMessage(final GL2 gl2){
-		helpMessage = "Use [w, a, s, d] to move.";
+		helpMessage0 = "-------------------------------------------------------";
+		helpMessage1 = "Use [w, a, s, d] to move";
+		helpMessage2 = "Click and drag mouse to change angle";
+		helpMessage3 = "Use spacebar to start shot";
+		helpMessage4 = "Use spacebar again to shoot";
+		helpMessage5 = "Use [h] to close help prompt";
+
 		
 		helpMessageRenderer = new TextRenderer(new Font("SansSerif", Font.BOLD, 14));
 		
 		helpMessageRenderer.beginRendering(600, 600);
-		helpMessageRenderer.setColor(Color.RED);
-		helpMessageRenderer.draw(helpMessage, 5, 25);
+		helpMessageRenderer.setColor(Color.YELLOW);
+		helpMessageRenderer.draw(helpMessage0, 165, 345);
 		helpMessageRenderer.endRendering();
+		
+		helpMessageRenderer.beginRendering(600, 600);
+		helpMessageRenderer.setColor(Color.WHITE);
+		helpMessageRenderer.draw(helpMessage1, 220, 330);
+		helpMessageRenderer.endRendering();
+		
+		helpMessageRenderer.beginRendering(600, 600);
+		helpMessageRenderer.setColor(Color.WHITE);
+		helpMessageRenderer.draw(helpMessage2, 170, 315);
+		helpMessageRenderer.endRendering();
+		
+		helpMessageRenderer.beginRendering(600, 600);
+		helpMessageRenderer.setColor(Color.WHITE);
+		helpMessageRenderer.draw(helpMessage3, 205, 300);
+		helpMessageRenderer.endRendering();
+		
+		helpMessageRenderer.beginRendering(600, 600);
+		helpMessageRenderer.setColor(Color.WHITE);
+		helpMessageRenderer.draw(helpMessage4, 197, 285);
+		helpMessageRenderer.endRendering();
+		
+		helpMessageRenderer.beginRendering(600, 600);
+		helpMessageRenderer.setColor(Color.WHITE);
+		helpMessageRenderer.draw(helpMessage5, 197, 270);
+		helpMessageRenderer.endRendering();
+		
+		helpMessageRenderer.beginRendering(600, 600);
+		helpMessageRenderer.setColor(Color.YELLOW);
+		helpMessageRenderer.draw(helpMessage0, 165, 255);
+		helpMessageRenderer.endRendering();
+		
+	}
+	
+	public void drawReplayPrompt(final GL2 gl2){
+		replayMessage = "Do you want to see a replay? [y/n]";
+		
+		//Add text renderer
+		textRenderer = new TextRenderer(new Font("SansSerif", Font.BOLD, 20));
+
+		textRenderer.beginRendering(600, 600);
+		textRenderer.setColor(Color.BLACK);
+		textRenderer.draw(replayMessage, 170, 315);
+		textRenderer.endRendering();		
+	}
+	
+	public void drawRetryPrompt(final GL2 gl2){
+		retryMessage = "Do you want to retry your shot? [y/n]";
+		
+		//Add text renderer
+		textRenderer = new TextRenderer(new Font("SansSerif", Font.BOLD, 20));
+
+		textRenderer.beginRendering(600, 600);
+		textRenderer.setColor(Color.BLACK);
+		textRenderer.draw(retryMessage, 170, 315);
+		textRenderer.endRendering();	
+	}
+	
+	public void drawReplayInstructions(final GL2 gl2){
+		replayInstructions = "Press [z] to slow down, [x] to speed up";
+		
+		//Add text renderer
+		textRenderer = new TextRenderer(new Font("SansSerif", Font.BOLD, 20));
+
+		textRenderer.beginRendering(600, 600);
+		textRenderer.setColor(Color.BLACK);
+		textRenderer.draw(replayInstructions, 5, 25);
+		textRenderer.endRendering();		
 	}
 
 	public float getBall_Power() {

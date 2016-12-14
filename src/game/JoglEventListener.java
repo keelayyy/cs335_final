@@ -23,6 +23,7 @@ import com.jogamp.opengl.GLEventListener;
 import com.jogamp.opengl.awt.GLCanvas;
 import com.jogamp.opengl.glu.GLU;
 import com.jogamp.opengl.util.Animator;
+import com.jogamp.opengl.util.FPSAnimator;
 import com.jogamp.opengl.util.awt.TextRenderer;
 
 
@@ -30,11 +31,12 @@ import com.jogamp.opengl.util.awt.TextRenderer;
 
 public class JoglEventListener extends GLCanvas implements GLEventListener, KeyListener, MouseListener, MouseMotionListener {
 	
-	private static Animator animator;
+	private FPSAnimator animator;
+	private int FPS = 60;
 
     private GLU glu = new GLU();
     
-    private boolean powerCheck = false;
+    private boolean powerDisplay = false;
     private boolean helpCheck = false;
     
     //size of power bar and power bar counter to count twice
@@ -50,6 +52,7 @@ public class JoglEventListener extends GLCanvas implements GLEventListener, KeyL
     
     //true if asking for replay, false otherwise
     private boolean askForReplay = false;
+    private boolean askForRetry = false;
     
     //Text renderer for ballPower
     private TextRenderer textRenderer;
@@ -76,7 +79,7 @@ public class JoglEventListener extends GLCanvas implements GLEventListener, KeyL
 	private float dragX;
 	private float dragY;
 	
-	private boolean ShootMode = false;
+	private boolean shootingPrep = false;
 	
 
 	float windowWidth, windowHeight;
@@ -116,11 +119,11 @@ public class JoglEventListener extends GLCanvas implements GLEventListener, KeyL
 		
 		court = new Court();
 		ball = new Ball(0.75f);
-		basket = new Basket(31.5f,2f,0f,1.0f);
+		basket = new Basket(32.0f,2f,0f,1.0f);
 		hud = new HUD(0f, 0f, ballPower);
 		
 		//Start animator
-    	animator = new Animator(this);
+    	animator = new FPSAnimator(this, FPS);
     	animator.start();
 	}
 
@@ -168,7 +171,7 @@ public class JoglEventListener extends GLCanvas implements GLEventListener, KeyL
 	
 	public void drawHUD(GL2 gl2, float barSize){
 		hud.draw(gl2, barSize);
-		if (powerCheck == true){
+		if (powerDisplay == true){
 			hud.drawBallPower(gl2);
 		}
 	}
@@ -182,43 +185,74 @@ public class JoglEventListener extends GLCanvas implements GLEventListener, KeyL
 		setup3D(gl2);
 		render3D(gl2);
 		
-		setup2D(gl2);
-		render2D(gl2);
-		if (ShootMode == true){
-			if(barSize < 300){
-				barSize = barSize + 5;
-			}
-			else{
-				barSize = 0;
-				barCounter++;
-				if (barCounter == 2){
-					ShootMode = false;
-					barCounter = 0;
+		if (!replaying){
+			setup2D(gl2);
+			render2D(gl2);
+			if (shootingPrep == true){
+				if(barSize < 300){
+					barSize = barSize + 5;
 				}
-			}
-		}
-		if (shootingMode){
-			miss = !path.isScored();
-			if (shootFrame < path.getNumSteps() - 1){
-				if (reshot){
-					shootFrame = 0;
-					playSound(new File("src/sounds/please_no_more.wav"));
-				}
-				else if (path.isScored() && path.getScoredLocation() == shootFrame){
-					playSound(new File("src/sounds/bill_ted_excellent.wav"));
-				}
-				else {
-					if (miss && shootFrame < 1){
-						playSound(new File("src/sounds/my_wheaties.wav"));
+				else{
+					barSize = 0;
+					barCounter++;
+					if (barCounter == 2){
+						shootingPrep = false;
+						barCounter = 0;
 					}
-					miss = false;
 				}
-				shootFrame++;
 			}
-			else {
-				askForReplay = true;
+			if (reshot){
+				path = null;
+				playSound(new File("src/sounds/please_no_more.wav"));
+				reshot = false;
+			}
+			if (shootingMode){
+				miss = !path.isScored();
+				if (shootFrame < path.getNumSteps() - 1){
+					if (path.isScored() && path.getScoredLocation() == shootFrame){
+						playSound(new File("src/sounds/bill_ted_excellent.wav"));
+						askForReplay = true;
+					}
+					else {
+						if (miss && shootFrame < 1){
+							playSound(new File("src/sounds/my_wheaties.wav"));
+							askForRetry = true;
+						}
+						miss = false;
+					}
+					shootFrame++;
+				}
+				
+			}
+			if (askForReplay) {
+				hud.drawReplayPrompt(gl2);
+			}
+			if (askForRetry) {
+				hud.drawRetryPrompt(gl2);
 			}
 		}
+		else if (initiateReplay){
+			startReplay(gl2);
+		}
+	}
+    
+    private boolean initiateReplay = false;
+	private boolean continueReplay = false;
+	private boolean replaying = false;
+	    
+	public void startReplay(final GL2 gl2){
+		replaying = true;
+        hud.drawReplayInstructions(gl2);
+	    while (replaying){
+	    	if (initiateReplay){
+	    		shootFrame = 0;
+	    		while (continueReplay){
+	    	        if (shootFrame < path.getNumSteps() - 1){
+	    	        	shootFrame++;
+	    	        }
+	    		}
+	    	}
+	    }
 	}
     
     public void setup3D(final GL2 gl2){
@@ -233,8 +267,6 @@ public class JoglEventListener extends GLCanvas implements GLEventListener, KeyL
 	    camera_lookat_X = (float) (camera_X + (Math.cos(camera_angle_X)));
 		camera_lookat_Y = (float) (camera_Y - 3.0 + (Math.sin(camera_angle_Y)));
 		camera_lookat_Z = (float) (camera_Z + (Math.sin(camera_angle_X)));
-		//System.out.println(camera_lookat_X);
-		//System.out.println(camera_lookat_Y);
 	    glu.gluLookAt(camera_X,camera_Y - 3.0,camera_Z,
 	    		camera_lookat_X, 
 	    		camera_lookat_Y, 
@@ -252,8 +284,8 @@ public class JoglEventListener extends GLCanvas implements GLEventListener, KeyL
 		gl2.glPushMatrix();
 
 		drawCourt(gl2);
-		drawBasket(gl2);
 		drawBall(gl2);
+		drawBasket(gl2);
         
         gl2.glPopMatrix();
     }
@@ -275,12 +307,14 @@ public class JoglEventListener extends GLCanvas implements GLEventListener, KeyL
     public void render2D(final GL2 gl2){
         gl2.glPushMatrix();
         
-        drawHUD(gl2, barSize);
-        if (helpCheck == false){
-        	hud.drawHelpPrompt(gl2);
-        }
-        else if (helpCheck == true){
-        	hud.drawHelpMessage(gl2);
+        if (!replaying){
+            drawHUD(gl2, barSize);
+            if (helpCheck == false){
+            	hud.drawHelpPrompt(gl2);
+            }
+            else if (helpCheck == true){
+            	hud.drawHelpMessage(gl2);
+            }
         }
         
         gl2.glPopMatrix();
@@ -290,32 +324,20 @@ public class JoglEventListener extends GLCanvas implements GLEventListener, KeyL
 		
 		try {
 			AudioInputStream stream;
-			//AudioFormat format;
-			//DataLine.Info info;
 			Clip clip;
 			
 			stream = AudioSystem.getAudioInputStream(file);
-			//format = stream.getFormat();
-			//info = new DataLine.Info(Clip.class, format);
 			clip = AudioSystem.getClip();
 			clip.open(stream);
 			clip.start();
-			/*Thread.sleep(clip.getMicrosecondLength());
-			clip.close();*/
 			
 		} catch (UnsupportedAudioFileException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (LineUnavailableException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
-		} /*catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}*/
+		}
 	}
 	
 	
@@ -361,10 +383,72 @@ public class JoglEventListener extends GLCanvas implements GLEventListener, KeyL
 				camera_Z += .3f * Math.sin((Math.PI/2) - camera_angle_X);
 			}
 			break;
+		case 'e':
+			camera_Y += 0.1f;
+			break;
+		case 'r':
+			camera_Y -= 0.1f;
+			break;
+		case 'm':
+			camera_X = 0f;
+			camera_Y = 0f;
+			camera_Z = 0f;
+			camera_angle_X = 0f;
+			camera_angle_Y = 0f;
+			break;
+		case 'l':
+			camera_X = 37f;
+			camera_Y = 12f;
+			camera_Z = 18f;
+			break;
+		case 'y':
+			if (askForReplay) {
+				initiateReplay = true;
+				askForReplay = false;
+				shootFrame = 0;
+			}
+			else if (askForRetry) {
+				reshot = true;
+				shootingMode = false;
+				askForRetry = false;
+			}
+			break;
+		case 'n':
+			if (askForReplay) {
+				reshot = true;
+				shootingMode = false;
+				askForReplay = false;
+				replaying = false;
+			}
+			if (askForRetry){
+				System.exit(0);
+			}
+			break;
+		case 'z':
+			FPS /= 2;
+			animator.stop();
+			animator.setFPS(FPS);
+			animator.start();
+			break;
+		case 'x':
+			FPS *= 2;
+			animator.stop();
+			animator.setFPS(FPS);
+			animator.start();
+			break;
+		case 'c':
+			if (continueReplay){
+				continueReplay = false;
+			}
+			else {
+				continueReplay = true;
+			}
+			break;
+		case 'v':
+			replaying = false;
+			continueReplay = false;
+			break;
 		}
-		//System.out.println("X: " + camera_X + "\tLookat X: " + camera_lookat_X);
-		//System.out.println("Y: " + camera_Y + "\tLookat Y: " + camera_lookat_Y);
-		//System.out.println("Z: " + camera_Z + "\tLookat Z: " + camera_lookat_Z);
 	}
 	
 	//determine location of click
@@ -465,43 +549,32 @@ public class JoglEventListener extends GLCanvas implements GLEventListener, KeyL
 		char key = e.getKeyChar();
 		
 		//if space bar is pressed, start shoot mode
-		if (key == ' ' && ShootMode == false){
-			ShootMode = true;
-			powerCheck = false;
-			shootingMode = false;
+		if (key == ' ' && shootingPrep == false){
+			shootingPrep = true;
+			powerDisplay = false;
 		}
 		//gets shot power from second press of space bar
 		//and resets power bar
-		else if (key == ' ' && ShootMode == true){
+		else if (key == ' ' && shootingPrep == true){
 			ballPower = barSize / 3;
-			System.out.println("BallPower: " + ballPower);
 			hud.setBall_Power((int) ballPower); 
-			ShootMode = false;
+			shootingPrep = false;
+			powerDisplay = true;
 			barSize = 0;
 			barCounter = 0;
 			Vector3f position = new Vector3f(new float[]{camera_X,camera_Y,camera_Z});
-//			if (position.x < ball.getPosition().x && position.z < ball.getPosition().z){
-//				position.x *= -1;
-//				position.z *= -1;
-//			}
-//			else if  (position.x > ball.getPosition().x && position.z < ball.getPosition().z){
-//				position.z *= -1;
-//			}
-//			else if  (position.x < ball.getPosition().x && position.z > ball.getPosition().z){
-//				position.x *= -1;
-//			}
 			if (position.x < 0) position.x -= ball.getPosition().x; else position.x += ball.getPosition().x;
 			if (position.z < 0) position.z -= ball.getPosition().z; else position.z += ball.getPosition().z;
 			position.y += ball.getPosition().y;
-//			position.z += Math.abs(ball.getPosition().z);
-			System.out.println("X: " + position.x);
-		    System.out.println("Y: " + position.y);
-		    System.out.println("Z: " + position.z);
-		    System.out.println("Xd: " + ball.getPosition().x);
-		    System.out.println("Yd: " + ball.getPosition().y);
-		    System.out.println("Zd: " + ball.getPosition().z);
+//			System.out.println("X: " + position.x);
+//		    System.out.println("Y: " + position.y);
+//		    System.out.println("Z: " + position.z);
+//		    System.out.println("Xd: " + ball.getPosition().x);
+//		    System.out.println("Yd: " + ball.getPosition().y);
+//		    System.out.println("Zd: " + ball.getPosition().z);
 			path = new BallPath(ball.getPosition(),position, ballPower, camera_angle_X, camera_angle_Y, court, basket, ball);
 			shootingMode = true;
+			
 		}
 		//displays help text if h is pressed
 		else if (key == 'h' && helpCheck == false){

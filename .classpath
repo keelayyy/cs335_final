@@ -16,5 +16,10 @@
 			<attribute name="org.eclipse.jdt.launching.CLASSPATH_ATTR_LIBRARY_PATH_ENTRY" value="C:/Users/Kyle/Documents/Eclipse/jogamp-all-platforms/jar"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry kind="lib" path="C:/Users/Kyle/Documents/Eclipse/jogamp-all-platforms/jar/vecmath.jar">
+		<attributes>
+			<attribute name="annotationpath" value="C:/Users/Kyle/Documents/Eclipse/jogamp-all-platforms/jar"/>
+		</attributes>
+	</classpathentry>
 	<classpathentry kind="output" path="build/classes"/>
 </classpath>
